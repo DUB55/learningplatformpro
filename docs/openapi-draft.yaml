@@ -1,0 +1,231 @@
+openapi: 3.0.3
+info:
+  title: Learning Platform - AI Wrapper API (Draft)
+  version: 0.1.0
+  description: >-
+    Lightweight wrapper API for AI calls. Non-streaming endpoints for Phase 1:
+    summarize, generate_flashcards, generate_plan. Auth via Supabase JWT (Bearer).
+servers:
+  - url: https://{api_host}
+    variables:
+      api_host:
+        default: https://learning-platform-tau-steel.vercel.app
+paths:
+  /api/ai/summarize:
+    post:
+      summary: Generate a summary (short or long) from context HTML/text
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contextHtml:
+                  type: string
+                type:
+                  type: string
+                  enum: [short, long]
+              required: [contextHtml, type]
+      responses:
+        "200":
+          description: Summary returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  summaryHtml:
+                    type: string
+                  tokensUsed:
+                    type: integer
+  /api/ai/generate/flashcards:
+    post:
+      summary: Generate flashcards (term/definition) from context
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contextHtml:
+                  type: string
+                maxCards:
+                  type: integer
+              required: [contextHtml]
+      responses:
+        "200":
+          description: Flashcards generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cards:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        term:
+                          type: string
+                        definition:
+                          type: string
+  /api/planner/generate:
+    post:
+      summary: Generate a study plan (calls AI backend)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                availability:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      day:
+                        type: string
+                      start:
+                        type: string
+                      end:
+                        type: string
+                confidences:
+                  type: object
+                examDates:
+                  type: array
+                maxDailyMinutes:
+                  type: integer
+      responses:
+        "200":
+          description: Plan generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  planId:
+                    type: string
+                  schedule:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        sessions:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              start:
+                                type: string
+                              end:
+                                type: string
+                              subjectId:
+                                type: string
+  /api/leersets/import-text:
+    post:
+      summary: Import a leerset from pasted text (format: term = definition per line)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                subjectId:
+                  type: string
+                text:
+                  type: string
+                createdBy:
+                  type: string
+              required: [title, subjectId, text, createdBy]
+      responses:
+        "201":
+          description: Leerset created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  leersetId:
+                    type: string
+                  created:
+                    type: integer
+  /api/srs/due:
+    get:
+      summary: Get due SRS cards for the user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of due cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    cardId:
+                      type: string
+                    term:
+                      type: string
+                    definition:
+                      type: string
+                    dueAt:
+                      type: string
+  /api/srs/review:
+    post:
+      summary: Submit a review for a card (SM-2)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cardId:
+                  type: string
+                quality:
+                  type: integer
+              required: [cardId, quality]
+      responses:
+        "200":
+          description: Updated card info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nextDue:
+                    type: string
+                  newInterval:
+                    type: integer
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
