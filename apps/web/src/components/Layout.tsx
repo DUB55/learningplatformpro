@@ -43,7 +43,7 @@ export default function Layout({ children }: LayoutProps) {
                         <LogOut className="w-5 h-5 mr-3" />
                         Sign Out
                     </button>
-                </div>
+                </nav>
             </aside>
 
             {/* Main Content */}
